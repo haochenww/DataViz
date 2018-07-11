@@ -1,0 +1,68 @@
+---
+title: "Air Travel Behaviors"
+author: "Haochen Wang, in collaboration with Fay Blelloch"
+date: "Spring 2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+```
+
+```{r, echo = FALSE}
+
+library(fivethirtyeight)
+library(ggplot2)
+library(readr)
+library(dplyr)
+library(ggthemes)
+library(stringr)
+library(tidyr)
+
+```
+
+## Air Travel Behaviors: Who Talks to Strangers and Who Acts Rude?
+
+
+There's nothing more annoying and uncomfortable than flying 35,000 feet above ground and being stuck in a room full of strangers. Not everyone is fortunate enough to sit next to that considerable neighbor who never gets up to use the bathroom, doesn't smell like cigarette smoke, and has the exact same opinions about whether to share the armrest or put up the window shade. For the rest of travelers, tolerance is the key.
+
+"But tolerating is hard! What do you do with those that never follow proper airplane etiquette and make me frustrated?", you might ask. Well, there are actually sensical explanations as to why some travelers act in certain ways. If you've ever encountered talkative seatmates who, despite your lackluster responses and closed posture, did not seem to pick up any hints to stop their one-sided conversation, then you should have taken pity on them. Chances are, they fly too often and are really bored on board, and are desperately trying to alleviate their boredom by talking to you. 
+
+```{r}
+
+flying <- flying %>% 
+  filter(!is.na(frequency), !is.na(talk_stranger))
+
+ggplot(data = flying, mapping = aes(x = frequency)) + geom_bar(aes(fill = talk_stranger), position = "fill") + scale_fill_manual(values=c("#599AD3", "#F9A65A", "#9E66AB")) + coord_flip() + labs(title = "Proportions Talking to Strangers vs. Flying Frequency", subtitle = "Do travelers who fly frequently talk more often to strangers?", x = "Frequency of Flying", y = "Proportions Talking to Strangers") + guides(fill = guide_legend(title="Talk to Stranger")) + theme_tufte()
+
+```
+
+In the analysis done by [fivethirtyeight](https://data.fivethirtyeight.com/), about 80% of travelers that fly less than once a year or month don't talk to strangers. Traveling is not a frequent venture for them, so they might have already prepared for inflight entertainment and would much prefer to self-indulge in their airtime rather than risk an awkward and stressful conversation. Those that fly a few times per month or week have double the proportion of talking to strangers, perhaps because they have more experience at socializing on flight and became more comfortable doing it. Frequent fliers -- those that fly everyday -- are very inclined to talk to strangers, with 65% of them talking somewhat, and the other 35% talking to strangers very much. Be understanding of them, because they probably could not have helped themselves from becoming so chitchattery in order to pass the long and frequent flight time. 
+
+Aside from chatting with strangers, another airplane etiquette concern surrounds the issue of reclining your seat. In the same fivethirtyeight dataset, researchers found that 41% of respondents found it rude to recline your seat on a plane. But do some people have a better reason for finding reclining rude? 
+
+Imagine being six feet tall -- maybe you already are -- and the person in front of you decides to recline their seat. Now imagine being five feet tall and the person in front of you decides to recline their seat. These would seem to cause very different levels of discomfort. When thinking about who finds reclining seats more rude, one hypothesis may be that the tall people with longer legs may fear being squished by the slow descent of a reclining seat in front of them and that is why they find reclining ruder than their shorter counterparts. 
+
+The graph below seems to moderately support this hypothesis. The median height of those who find it very rude to recline is taller than the median heights of people who think reclining is not or somewhat rude. Looking at the exact numbers, we see that the median height of those who find it very rude is a whole inch taller, at 68 inches, while those who find it not rude and somewhat rude have a median height of 67 inches.
+
+
+```{r, error = FALSE}
+
+recline_height <- flying %>%
+  filter(height != "Under 5 ft." & height != "NA" & height != "6'6 and above" & recline_rude != "NA") %>%
+  separate(col = height, into = c("feet", "inches"), sep = "'") %>%
+  mutate(Feet = feet, Inches = inches) %>%
+  select(feet, inches, recline_rude, recline_frequency) %>%
+  mutate(feet = as.integer(feet)) %>%
+  mutate(inches = as.integer(str_replace(inches, "[\"]", ""))) %>%
+  mutate(height_inches = (feet * 12) + inches) %>%
+  filter(height_inches != "NA")
+  
+ggplot(data = recline_height, mapping = aes(x = recline_rude, y = height_inches)) + geom_boxplot(fill = "#F9A65A") +  labs(title = "Height vs. Opinions on Reclining", subtitle = "Do tall people have different views on reclining seats compared \n to their shorter counterparts?", x = "How rude is it to recline?", y = "Height in Inches") + theme_tufte()
+
+```
+
+Now these results may not help make your next flying experience more enjoyable, but they do highlight an important part of airplane etiquette: everyone has different views on the "Yay"s and the "Nay"s. If your neighbor wants to chat, understand that maybe they're a bored frequent flyer who has seen all the movies offered. If you're sitting in front of a tall person, see how they feel about you reclining your seat. Your neighbors on this large metal box hurdling through the sky may find your actions (and you may find theirs) rude for a handful of different reasons, so communication is key! 
+
+Source: https://github.com/fivethirtyeight/data/tree/master/flying-etiquette-survey
+
